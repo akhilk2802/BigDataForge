@@ -15,7 +15,7 @@ type LinkedService struct {
 	Name       string `json:"name"`
 }
 
-type PlanServiceCostShares struct {
+type PlanserviceCostShares struct {
 	Deductible int    `json:"deductible"`
 	Org        string `json:"_org"`
 	Copay      int    `json:"copay"`
@@ -23,20 +23,20 @@ type PlanServiceCostShares struct {
 	ObjectType string `json:"objectType"`
 }
 
-type LinkedPlanServices struct {
+type LinkedPlanService struct {
 	LinkedService         LinkedService         `json:"linkedService"`
-	PlanServiceCostShares PlanServiceCostShares `json:"planserviceCostShares"`
+	PlanserviceCostShares PlanserviceCostShares `json:"planserviceCostShares"`
 	Org                   string                `json:"_org"`
 	ObjectId              string                `json:"objectId"`
 	ObjectType            string                `json:"objectType"`
 }
 
 type Plan struct {
-	PlanCostShares     PlanCostShares       `json:"planCostShares"`
-	LinkedPlanServices []LinkedPlanServices `json:"linkedPlanServices"`
-	Org                string               `json:"_org"`
-	ObjectId           string               `json:"objectId"`
-	ObjectType         string               `json:"objectType"`
-	PlanType           string               `json:"planType"`
-	CreationDate       string               `json:"creationDate"`
+	PlanCostShares     PlanCostShares      `json:"planCostShares"`
+	LinkedPlanServices []LinkedPlanService `json:"linkedPlanServices"`
+	Org                string              `json:"_org"`
+	ObjectId           string              `json:"objectId"`
+	ObjectType         string              `json:"objectType"`
+	PlanType           string              `json:"planType"`
+	CreationDate       string              `json:"creationDate"`
 }
