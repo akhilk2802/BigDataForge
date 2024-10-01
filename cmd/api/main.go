@@ -1,17 +1,21 @@
 package main
 
 import (
-	"BigDataForge/config"
 	"BigDataForge/routes"
+	"log"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Load configuration
-	config.LoadConfig()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
-	// Initialize routes
-	router := routes.SetupRouter()
+	router := gin.Default()
+	routes.SetupRoutes(router)
 
-	// Start the server
 	router.Run(":8080")
 }
