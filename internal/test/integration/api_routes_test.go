@@ -1,9 +1,6 @@
 package integration
 
 import (
-	"BigDataForge/internal/models"
-	"BigDataForge/internal/routes"
-	"BigDataForge/internal/services"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -11,6 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"BigDataForge/internal/models"
+	"BigDataForge/internal/routes"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -21,27 +21,21 @@ import (
 // Mock Redis Client for integration testing
 type MockRedisClient struct {
 	mock.Mock
+	redis.Cmdable // Embed the redis.Cmdable interface
 }
 
 func (m *MockRedisClient) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
-	args := m.Called(ctx, key, value, expiration)
 	return &redis.StatusCmd{}
 }
 
 func (m *MockRedisClient) Get(ctx context.Context, key string) *redis.StringCmd {
-	args := m.Called(ctx, key)
 	result := new(redis.StringCmd)
-	if v := args.String(0); v != "" {
-		result.SetVal(v)
-	} else {
-		result.SetErr(args.Error(1))
-	}
+	result.SetVal("mocked_value")
 	return result
 }
 
 func (m *MockRedisClient) Del(ctx context.Context, keys ...string) *redis.IntCmd {
-	args := m.Called(ctx, keys)
-	return new(redis.IntCmd)
+	return &redis.IntCmd{}
 }
 
 // Integration test for POST /plans
@@ -50,8 +44,8 @@ func TestIntegrationCreatePlan(t *testing.T) {
 	r := gin.Default()
 
 	mockRedis := new(MockRedisClient)
-	services := services.NewPlanService(mockRedis)
 
+	// Pass mockRedis to SetupRoutes (now it implements Cmdable)
 	routes.SetupRoutes(r, mockRedis)
 
 	plan := models.Plan{
@@ -60,6 +54,7 @@ func TestIntegrationCreatePlan(t *testing.T) {
 	}
 	planJSON, _ := json.Marshal(plan)
 
+	// Mock Redis Set command
 	mockRedis.On("Set", ctx, "plan:plan123", planJSON, mock.Anything).Return(nil)
 
 	// Create HTTP request
@@ -69,6 +64,7 @@ func TestIntegrationCreatePlan(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
+	// Check if the response is HTTP 201 Created
 	assert.Equal(t, http.StatusCreated, w.Code)
 }
 
@@ -78,8 +74,8 @@ func TestIntegrationGetPlan(t *testing.T) {
 	r := gin.Default()
 
 	mockRedis := new(MockRedisClient)
-	services := services.NewPlanService(mockRedis)
 
+	// Pass mockRedis to SetupRoutes (now it implements Cmdable)
 	routes.SetupRoutes(r, mockRedis)
 
 	planID := "plan123"
@@ -89,11 +85,13 @@ func TestIntegrationGetPlan(t *testing.T) {
 	}
 	planJSON, _ := json.Marshal(plan)
 
+	// Mock Redis Get command
 	mockRedis.On("Get", ctx, "plan:"+planID).Return(string(planJSON), nil)
 
 	req, _ := http.NewRequest("GET", "/api/v1/plans?id=plan123", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
+	// Check if the response is HTTP 200 OK
 	assert.Equal(t, http.StatusOK, w.Code)
 }

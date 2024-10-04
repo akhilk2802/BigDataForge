@@ -17,30 +17,30 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+// Declare the context for use in tests
+var ctx = context.Background()
+
 // Mock Redis Client
 type MockRedisClient struct {
 	mock.Mock
 }
 
 func (m *MockRedisClient) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
-	args := m.Called(ctx, key, value, expiration)
 	return &redis.StatusCmd{}
 }
 
 func (m *MockRedisClient) Get(ctx context.Context, key string) *redis.StringCmd {
-	args := m.Called(ctx, key)
 	result := new(redis.StringCmd)
-	if v := args.String(0); v != "" {
+	if v := m.Called(ctx, key).String(0); v != "" {
 		result.SetVal(v)
 	} else {
-		result.SetErr(args.Error(1))
+		result.SetErr(redis.Nil)
 	}
 	return result
 }
 
 func (m *MockRedisClient) Del(ctx context.Context, keys ...string) *redis.IntCmd {
-	args := m.Called(ctx, keys)
-	return new(redis.IntCmd)
+	return &redis.IntCmd{}
 }
 
 // Test Create Plan
@@ -57,12 +57,11 @@ func TestCreatePlan(t *testing.T) {
 	mockRedis.On("Set", ctx, "plan:plan123", planJSON, mock.Anything).Return(nil)
 
 	gin.SetMode(gin.TestMode)
-	r := gin.Default()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
 
 	req, _ := http.NewRequest("POST", "/api/v1/plans", bytes.NewBuffer(planJSON))
 	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
 	c.Request = req
 
 	service.CreatePlan(c)
@@ -86,11 +85,10 @@ func TestGetPlan(t *testing.T) {
 	mockRedis.On("Get", ctx, "plan:"+planID).Return(string(planJSON), nil)
 
 	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-
-	req, _ := http.NewRequest("GET", "/api/v1/plans?id=plan123", nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
+
+	req, _ := http.NewRequest("GET", "/api/v1/plans?id=plan123", nil)
 	c.Request = req
 
 	service.GetPlan(c)
@@ -105,15 +103,13 @@ func TestGetPlanNotFound(t *testing.T) {
 
 	planID := "nonexistent"
 
-	// Set mock expectation for missing plan
 	mockRedis.On("Get", ctx, "plan:"+planID).Return("", redis.Nil)
 
 	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-
-	req, _ := http.NewRequest("GET", "/api/v1/plans?id=nonexistent", nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
+
+	req, _ := http.NewRequest("GET", "/api/v1/plans?id=nonexistent", nil)
 	c.Request = req
 
 	service.GetPlan(c)

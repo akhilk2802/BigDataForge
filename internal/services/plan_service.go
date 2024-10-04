@@ -14,7 +14,7 @@ import (
 var ctx = context.Background()
 
 type PlanService struct {
-	redisClient *redis.Client
+	redisClient redis.Cmdable
 }
 
 func NewPlanService(redisClient *redis.Client) *PlanService {
