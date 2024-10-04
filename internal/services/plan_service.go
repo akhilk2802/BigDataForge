@@ -1,46 +1,110 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
+	"net/http"
+
 	"BigDataForge/internal/models"
-	"BigDataForge/internal/storage"
-	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 )
 
+var ctx = context.Background()
+
 type PlanService struct {
-	Redis *storage.RedisStore
+	redisClient *redis.Client
 }
 
-func NewPlanService(redisStore *storage.RedisStore) *PlanService {
-	return &PlanService{Redis: redisStore}
+func NewPlanService(redisClient *redis.Client) *PlanService {
+	return &PlanService{redisClient: redisClient}
 }
 
-func (ps *PlanService) CreatePlan(id string, plan models.Plan) error {
-	planData, err := json.Marshal(plan)
-	if err != nil {
-		return err
-	}
-	return ps.Redis.SetPlan(id, string(planData))
-}
-
-func (ps *PlanService) GetPlan(id string, ifModifiedSince time.Time) (models.Plan, bool, error) {
-	data, err := ps.Redis.GetPlan(id)
-	if err != nil {
-		return models.Plan{}, false, err
-	}
+// Create a new Plan
+func (service *PlanService) CreatePlan(c *gin.Context) {
 	var plan models.Plan
-	json.Unmarshal([]byte(data), &plan)
+	if err := c.BindJSON(&plan); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		return
+	}
 
-	creationDate, err := time.Parse("02-01-2006", plan.CreationDate)
+	planID := plan.ObjectID
+	planJSON, err := json.Marshal(plan)
 	if err != nil {
-		return models.Plan{}, false, err
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process plan"})
+		return
 	}
-	if !ifModifiedSince.IsZero() && !creationDate.After(ifModifiedSince) {
-		return plan, false, nil // Not modified
+
+	err = service.redisClient.Set(ctx, "plan:"+planID, planJSON, 0).Err()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store plan in Redis"})
+		return
 	}
-	return plan, true, nil
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Plan created", "planId": planID})
 }
 
-func (ps *PlanService) DeletePlan(id string) error {
-	return ps.Redis.DeletePlan(id)
+// Retrieve a Plan
+func (service *PlanService) GetPlan(c *gin.Context) {
+	planID := c.Query("id")
+	planJSON, err := service.redisClient.Get(ctx, "plan:"+planID).Result()
+	if err == redis.Nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Plan not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve plan"})
+		return
+	}
+
+	var plan models.Plan
+	err = json.Unmarshal([]byte(planJSON), &plan)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse plan data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, plan)
+}
+
+// Delete a Plan
+func (service *PlanService) DeletePlan(c *gin.Context) {
+	planID := c.Query("id")
+	err := service.redisClient.Del(ctx, "plan:"+planID).Err()
+	if err == redis.Nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Plan not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete plan"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Plan deleted"})
+}
+
+// Conditional Retrieve Plan (example condition: "planType" == "inNetwork")
+func (service *PlanService) ConditionalGetPlan(c *gin.Context) {
+	planID := c.Query("id")
+	planJSON, err := service.redisClient.Get(ctx, "plan:"+planID).Result()
+	if err == redis.Nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Plan not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve plan"})
+		return
+	}
+
+	var plan models.Plan
+	err = json.Unmarshal([]byte(planJSON), &plan)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse plan data"})
+		return
+	}
+
+	// Example condition: return plan only if planType is "inNetwork"
+	if plan.PlanType == "inNetwork" {
+		c.JSON(http.StatusOK, plan)
+	} else {
+		c.JSON(http.StatusForbidden, gin.H{"message": "Condition not met"})
+	}
 }

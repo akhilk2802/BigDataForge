@@ -1,21 +1,25 @@
 package main
 
 import (
-	"BigDataForge/routes"
+	"BigDataForge/internal/routes"
+	"BigDataForge/internal/storage"
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+	// Set up Redis connection
+	redisClient := storage.NewRedisClient()
 
+	// Set up Gin router
 	router := gin.Default()
-	routes.SetupRoutes(router)
 
-	router.Run(":8080")
+	// Initialize routes
+	routes.SetupRoutes(router, redisClient)
+
+	// Start the server
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }
