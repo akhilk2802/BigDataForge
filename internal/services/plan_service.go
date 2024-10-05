@@ -117,5 +117,5 @@ func (service *PlanService) DeletePlan(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Plan deleted"})
+	c.Status(http.StatusNoContent)
 }
