@@ -11,11 +11,9 @@ import (
 
 const schemaPath = "./internal/schemas/plan_schema.json"
 
-// Validate incoming JSON against schema
 func ValidatePlanSchema(c *gin.Context) bool {
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaPath)
 
-	// Read the raw request body for validation
 	body, err := ioutil.ReadAll(c.Request.Body)
 	// fmt.Printf("Here is the payload Data : %v", string(body))
 	if err != nil {
@@ -23,7 +21,6 @@ func ValidatePlanSchema(c *gin.Context) bool {
 		return false
 	}
 
-	// Load the request body into the validator
 	documentLoader := gojsonschema.NewStringLoader(string(body))
 	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	if err != nil {
@@ -31,7 +28,6 @@ func ValidatePlanSchema(c *gin.Context) bool {
 		return false
 	}
 
-	// Print specific validation errors
 	if !result.Valid() {
 		var validationErrors []string
 		for _, desc := range result.Errors() {
@@ -41,7 +37,6 @@ func ValidatePlanSchema(c *gin.Context) bool {
 		return false
 	}
 
-	// Reset the request body for further processing
 	c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
 	return true

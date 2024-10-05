@@ -11,27 +11,24 @@ import (
 
 var ctx = context.Background()
 
-// NewRedisClient initializes and returns a Redis client
 func NewRedisClient() *redis.Client {
-	// Fetch Redis connection details from environment variables (if available)
 	redisAddr := os.Getenv("REDIS_ADDR")
 	if redisAddr == "" {
 		redisAddr = "localhost:6379" // Default address for Redis
 	}
 
-	redisPassword := os.Getenv("REDIS_PASSWORD") // Optional, set in environment for production
+	redisPassword := os.Getenv("REDIS_PASSWORD")
 	redisDB := os.Getenv("REDIS_DB")
 	if redisDB == "" {
-		redisDB = "0" // Default Redis DB
+		redisDB = "0"
 	}
 
 	client := redis.NewClient(&redis.Options{
-		Addr:     redisAddr,     // Redis address
-		Password: redisPassword, // No password by default
-		DB:       0,             // Default DB
+		Addr:     redisAddr,
+		Password: redisPassword,
+		DB:       0,
 	})
 
-	// Check the connection by pinging the Redis server
 	_, err := client.Ping(ctx).Result()
 	if err != nil {
 		log.Fatalf("Failed to connect to Redis: %v", err)
@@ -42,7 +39,6 @@ func NewRedisClient() *redis.Client {
 	return client
 }
 
-// SetKey stores a key-value pair in Redis with an optional expiration time
 func Set(client *redis.Client, key string, value string, expiration time.Duration) error {
 	err := client.Set(ctx, key, value, expiration).Err()
 	if err != nil {
@@ -52,7 +48,6 @@ func Set(client *redis.Client, key string, value string, expiration time.Duratio
 	return nil
 }
 
-// GetKey retrieves a value from Redis for a given key
 func Get(client *redis.Client, key string) (string, error) {
 	value, err := client.Get(ctx, key).Result()
 	if err == redis.Nil {
@@ -65,7 +60,6 @@ func Get(client *redis.Client, key string) (string, error) {
 	return value, nil
 }
 
-// DeleteKey removes a key-value pair from Redis
 func Del(client *redis.Client, key string) error {
 	err := client.Del(ctx, key).Err()
 	if err != nil {

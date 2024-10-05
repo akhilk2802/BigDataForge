@@ -18,24 +18,19 @@ func NewPlanController(redisClient *redis.Client) *PlanController {
 	}
 }
 
-// POST - Create Plan
 func (controller *PlanController) CreatePlan(c *gin.Context) {
 
-	// Validate the incoming JSON against the schema
 	if !validators.ValidatePlanSchema(c) {
 		return
 	}
 
-	// Delegate to service
 	controller.Service.CreatePlan(c)
 }
 
-// GET - Retrieve Plan
 func (controller *PlanController) GetPlan(c *gin.Context) {
 	controller.Service.GetPlan(c)
 }
 
-// DELETE - Delete Plan
 func (controller *PlanController) DeletePlan(c *gin.Context) {
 	controller.Service.DeletePlan(c)
 }
