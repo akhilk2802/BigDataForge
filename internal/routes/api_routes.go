@@ -15,6 +15,5 @@ func SetupRoutes(router *gin.Engine, redisClient *redis.Client) {
 		api.POST("/plans", planController.CreatePlan)
 		api.GET("/plans", planController.GetPlan)
 		api.DELETE("/plans", planController.DeletePlan)
-		api.GET("/plans/conditional", planController.ConditionalGetPlan)
 	}
 }

@@ -39,8 +39,3 @@ func (controller *PlanController) GetPlan(c *gin.Context) {
 func (controller *PlanController) DeletePlan(c *gin.Context) {
 	controller.Service.DeletePlan(c)
 }
-
-// GET - Conditional Retrieve Plan
-func (controller *PlanController) ConditionalGetPlan(c *gin.Context) {
-	controller.Service.ConditionalGetPlan(c)
-}
