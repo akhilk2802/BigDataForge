@@ -9,9 +9,16 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-const schemaPath = "./internal/schemas/plan_schema.json"
+const createSchemaPath = "./internal/schemas/plan_schema.json"
+const patchSchemaPath = "./internal/schemas/patch_plan_schema.json"
 
 func ValidatePlanSchema(c *gin.Context) bool {
+
+	schemaPath := createSchemaPath
+	if c.Request.Method == http.MethodPatch {
+		schemaPath = patchSchemaPath
+	}
+
 	schemaLoader := gojsonschema.NewReferenceLoader("file://" + schemaPath)
 
 	body, err := ioutil.ReadAll(c.Request.Body)

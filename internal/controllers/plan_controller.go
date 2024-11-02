@@ -34,3 +34,10 @@ func (controller *PlanController) GetPlan(c *gin.Context) {
 func (controller *PlanController) DeletePlan(c *gin.Context) {
 	controller.Service.DeletePlan(c)
 }
+
+func (controller *PlanController) PatchPlan(c *gin.Context) {
+	if !validators.ValidatePlanSchema(c) {
+		return
+	}
+	controller.Service.PatchPlan(c)
+}

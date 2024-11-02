@@ -119,3 +119,62 @@ func (service *PlanService) DeletePlan(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (service *PlanService) PatchPlan(c *gin.Context) {
+	planID := c.Query("id")
+
+	// Retrieve existing plan data from Redis
+	planJSON, err := service.redisClient.Get(ctx, "plan:"+planID).Result()
+	if err == redis.Nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Plan not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve plan"})
+		return
+	}
+
+	var existingPlan models.Plan
+	json.Unmarshal([]byte(planJSON), &existingPlan)
+
+	currentETag := generateETag(existingPlan)
+	ifMatch := c.GetHeader("If-Match")
+	if ifMatch != "" && ifMatch != currentETag {
+		c.JSON(http.StatusPreconditionFailed, gin.H{"error": "Resource has been modified"})
+		return
+	}
+
+	var updatedData models.Plan
+	if err := c.BindJSON(&updatedData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		return
+	}
+
+	// Merge updates with existing plan data
+	if updatedData.PlanType != "" {
+		existingPlan.PlanType = updatedData.PlanType
+	}
+	if updatedData.CreationDate != "" {
+		existingPlan.CreationDate = updatedData.CreationDate
+	}
+	if updatedData.Org != "" {
+		existingPlan.Org = updatedData.Org
+	}
+	if len(updatedData.LinkedPlanServices) > 0 {
+		existingPlan.LinkedPlanServices = updatedData.LinkedPlanServices
+	}
+	if updatedData.PlanCostShares != (models.PlanCostShares{}) {
+		existingPlan.PlanCostShares = updatedData.PlanCostShares
+	}
+
+	newETag := generateETag(existingPlan)
+
+	mergedData, _ := json.Marshal(existingPlan)
+	err = service.redisClient.Set(ctx, "plan:"+planID, mergedData, 0).Err()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store updated plan"})
+		return
+	}
+
+	c.Header("ETag", newETag)
+	c.JSON(http.StatusOK, gin.H{"message": "Plan updated", "planId": planID})
+}
