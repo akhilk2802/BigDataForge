@@ -1,6 +1,7 @@
 package main
 
 import (
+	"BigDataForge/internal/elastic"
 	"BigDataForge/internal/routes"
 	"BigDataForge/internal/storage"
 	"log"
@@ -12,11 +13,14 @@ func main() {
 	// Set up Redis connection
 	redisClient := storage.NewRedisClient()
 
+	// Set up ElasticSearch connection
+	esFactory := &elastic.Factory{}
+
 	// Set up Gin router
 	router := gin.Default()
 
 	// Initialize routes
-	routes.SetupRoutes(router, redisClient)
+	routes.SetupRoutes(router, redisClient, esFactory)
 
 	// Start the server
 	if err := router.Run(":8080"); err != nil {

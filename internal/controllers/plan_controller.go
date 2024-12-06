@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"BigDataForge/internal/elastic"
 	"BigDataForge/internal/services"
 	"BigDataForge/internal/validators"
 
@@ -12,9 +13,9 @@ type PlanController struct {
 	Service *services.PlanService
 }
 
-func NewPlanController(redisClient *redis.Client) *PlanController {
+func NewPlanController(redisClient *redis.Client, esFactory *elastic.Factory) *PlanController {
 	return &PlanController{
-		Service: services.NewPlanService(redisClient),
+		Service: services.NewPlanService(redisClient, esFactory),
 	}
 }
 
@@ -40,4 +41,15 @@ func (controller *PlanController) PatchPlan(c *gin.Context) {
 		return
 	}
 	controller.Service.PatchPlan(c)
+}
+
+func (controller *PlanController) UpdatePlan(c *gin.Context) {
+	if !validators.ValidatePlanSchema(c) {
+		return
+	}
+	controller.Service.UpdatePlan(c)
+}
+
+func (controller *PlanController) SearchPlans(c *gin.Context) {
+	controller.Service.SearchPlans(c)
 }
