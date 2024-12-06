@@ -1,15 +1,19 @@
 # BigDataForge
 
-BigDataForge is a REST API service built using Golang's Gin framework and Redis as a key-value store. This service is designed to handle any structured data in JSON format and provides CRUD operations along with JSON Schema validation for incoming data.
+BigDataForge is a RESTful API project designed to manage and process complex structured data in JSON format. Built with Golang, it leverages a distributed systems approach to ensure scalability and reliability, integrating technologies like Redis, Elasticsearch, and RabbitMQ for optimized data storage, indexing, and message queueing.
+
+This project provides comprehensive support for CRUD operations, advanced conditional updates, and search capabilities. It demonstrates parent-child indexing and search using Elasticsearch, making it ideal for scenarios requiring hierarchical data relationships and efficient query execution.
+
 
 ## Features
 
-- **POST /plans**: Create a new plan with structured data.
-- **GET /plans**: Retrieve a plan by its ID.
-- **DELETE /plans**: Delete a plan by its ID.
-- **GET /plans/conditional**: Retrieve a plan conditionally based on attributes like `planType`.
-- **Validation**: JSON schema validation for incoming requests.
-- **Key-Value Store**: Redis is used for storing plan data as key-value pairs.
+- **RESTful APIs:** Flexible endpoints to handle structured JSON data.
+- **CRUD Operations:** Create, read, update, delete, and patch capabilities with advanced validation.
+- **Elasticsearch Integration:** Parent-child indexing and search for efficient hierarchical data retrieval.
+- **Queueing System:** RabbitMQ for handling message queues and ensuring reliable data ingestion.
+- **Data Validation:** Schema validation to ensure data integrity.
+- **Security:** Authentication using GCP OAuth2.0
+- **Distributed System Architecture:** Leveraging Redis for key-value storage and Elasticsearch for advanced indexing and search.
 
 ## Technologies Used
 
@@ -18,6 +22,18 @@ BigDataForge is a REST API service built using Golang's Gin framework and Redis 
 - **Redis**: In-memory key-value database used for storing plan data.
 - **gojsonschema**: JSON Schema validation library.
 - **Postman**: Used for testing API endpoints.
+
+
+## Data Flow
+1. Generate OAuth token using authorization work flow
+2. Validate further API requests using the received ID token
+3. Create JSON Object using the `POST` HTTP method
+4. Validate incoming JSON Object using the respective JSON Schema
+5. De-Structure hierarchial JSON Object while storing in Redis key-value store
+6. Enqueue object in RabbitMQ queue to index the object
+7. Dequeue from RabbitMQ queue and index data in ElasticServer
+8. Implement Search queries using Kibana Console to retrieve indexed data
+
 
 ## Installation
 
@@ -46,15 +62,35 @@ BigDataForge is a REST API service built using Golang's Gin framework and Redis 
     redis-server
     ```
 
-4.  Run the service:
+4. Start the elastic search:
+
+    ```bash
+    elasticsearch
+    ```
+
+5. Start the RabbitMQ:
+
+    ```bash
+    rabbitmq-server
+    ```
+
+6.  Run the service:
     
     ```bash
     go run cmd/api/main.go
+    go run cmd/listener/main.go
     ```
 
 ## API Endpoints
 
-1. Create a New Plan (POST/plans)
-2. Retrieve a Plan by ID (GET /plans?id=<planId>)
-3. Delete a Plan by ID (DELETE /plans?id=<planId>)
-4. Delete a Plan by ID (DELETE /plans/conditional/?id=<planId>)
+
+1. POST `/v1/plan` - Creates a new plan provided in the request body
+2. PUT `/v1/plan/{id}` - Updates an existing plan provided by the id
+    - A valid Etag for the object should also be provided in the `If-Match` HTTP Request Header
+3. PATCH `/v1/plan/{id}` - Patches an existing plan provided by the id
+    - A valid Etag for the object should also be provided in the `If-Match` HTTP Request Header
+4. GET `/v1/plan/{id}` - Fetches an existing plan provided by the id
+    - An Etag for the object can be provided in the `If-None-Match` HTTP Request Header
+    - If the request is successful, a valid Etag for the object is returned in the `ETag` HTTP Response Header
+5. DELETE `/v1/plan/{id}` - Deletes an existing plan provided by the id
+    - A valid Etag for the object should also be provided in the `If-Match` HTTP Request Header
