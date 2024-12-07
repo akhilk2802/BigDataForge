@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -229,6 +230,7 @@ func (service *PlanService) SearchPlans(c *gin.Context) {
 			},
 		},
 	}
+	fmt.Println(query)
 	queryBytes, err := json.Marshal(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to build query"})

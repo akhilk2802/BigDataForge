@@ -2,6 +2,7 @@ package elastic
 
 import (
 	"log"
+	"os"
 
 	"github.com/elastic/go-elasticsearch/v8"
 )
@@ -9,9 +10,13 @@ import (
 type Factory struct{}
 
 func (f *Factory) NewClient() (*elasticsearch.Client, error) {
+	elasticURL := os.Getenv("ELASTICSEARCH_URL")
+	if elasticURL == "" {
+		elasticURL = "http://localhost:9200"
+	}
 	cfg := elasticsearch.Config{
 		Addresses: []string{
-			"http://localhost:9200",
+			elasticURL,
 		},
 	}
 	client, err := elasticsearch.NewClient(cfg)

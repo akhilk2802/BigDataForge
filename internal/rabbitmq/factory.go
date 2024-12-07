@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"log"
+	"os"
 
 	"github.com/streadway/amqp"
 )
@@ -9,7 +10,12 @@ import (
 type Factory struct{}
 
 func (f *Factory) NewConnection() (*amqp.Connection, error) {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	// conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	rabbitmqURL := os.Getenv("RABBITMQ_URL")
+	if rabbitmqURL == "" {
+		rabbitmqURL = "amqp://guest:guest@localhost:5672/" // Fallback default
+	}
+	conn, err := amqp.Dial(rabbitmqURL)
 	if err != nil {
 		log.Printf("Failed to connect to RabbitMQ: %s", err)
 		return nil, err

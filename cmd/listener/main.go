@@ -160,6 +160,8 @@ func indexDocument(esClient *elasticsearch.Client, indexName, documentID string,
 
 func ensureIndex(esClient *elasticsearch.Client) {
 	// Create the index if it doesn't exist
+
+	fmt.Println("Creating index")
 	req := esapi.IndicesCreateRequest{Index: "plans"}
 	res, err := req.Do(context.Background(), esClient)
 	if err != nil {
@@ -167,16 +169,25 @@ func ensureIndex(esClient *elasticsearch.Client) {
 	}
 	defer res.Body.Close()
 
+	fmt.Println("Index created")
+
 	if res.IsError() {
 		log.Printf("Index creation response: %s", res.String())
 	}
 
+	fmt.Println("Applying mapping")
+
 	// Apply the mapping
 	mapping := getMapping()
+
+	fmt.Println("Mapping created")
+
 	mappingJSON, err := json.Marshal(mapping)
 	if err != nil {
 		log.Fatalf("Failed to serialize mapping: %s", err)
 	}
+
+	fmt.Println("Mapping serialized")
 
 	req2 := esapi.IndicesPutMappingRequest{
 		Index: []string{"plans"},
