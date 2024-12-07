@@ -42,7 +42,20 @@ This project provides comprehensive support for CRUD operations, advanced condit
 - **Go 1.17 or later**: Ensure that Golang is installed on your system. You can download it from [here](https://golang.org/dl/).
 - **Redis**: Make sure Redis is installed and running. Follow the installation instructions from the [Redis website](https://redis.io/download).
 
-### Steps
+### Steps: to run with `Docker`
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/akhilk2802/BigDataForge.git
+   cd BigDataForge
+   ```
+2. Build and run the docker-compose
+   ```bash
+   docker-compose up --build
+   ```
+
+
+### Steps: to run `Manually`
 
 1. Clone the repository:
 

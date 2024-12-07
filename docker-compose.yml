@@ -1,24 +1,67 @@
 version: "3.8"
 
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ./api
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - GOOGLE_CLIENT_ID=xxx
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+      - elasticsearch
+      - rabbitmq
+
+  listener:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ./listener
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - GOOGLE_CLIENT_ID=xxx
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - redis
+      - elasticsearch
+      - rabbitmq
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.1
-    container_name: elasticsearch
+    image: "docker.elastic.co/elasticsearch/elasticsearch:8.10.0"
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
     ports:
       - "9200:9200"
       - "9300:9300"
-    restart: always
+
+  rabbitmq:
+    image: "rabbitmq:management"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.16.1
-    container_name: kibana
+    image: "docker.elastic.co/kibana/kibana:8.10.0"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     ports:
       - "5601:5601"
-    restart: always
-
-  
+    depends_on:
+      - elasticsearch
