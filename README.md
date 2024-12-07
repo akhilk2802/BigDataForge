@@ -42,6 +42,9 @@ This project provides comprehensive support for CRUD operations, advanced condit
 - **Go 1.17 or later**: Ensure that Golang is installed on your system. You can download it from [here](https://golang.org/dl/).
 - **Redis**: Make sure Redis is installed and running. Follow the installation instructions from the [Redis website](https://redis.io/download).
 
+
+**Refer to example.env for setting up the required env variables** 
+
 ### Steps: to run with `Docker`
 
 1. Clone the repository:
